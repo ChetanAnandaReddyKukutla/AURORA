@@ -111,12 +111,19 @@
 
     // Push productClick event
     window.adobeDataLayer.push({
-      event: 'productClick',
-      eventInfo: { eventName: 'productClick' },
+      event: "productClick",
+      custData: {
+        custId: "",
+        emailID_plain: "",
+        mobileNo_plain: "",
+        loginStatus: "guest",
+        loginMethod: ""
+      },
+      eventInfo: { eventName: "productClick" },
       product: [{
         productId: productId,
         name: productName,
-        brand: 'Aurora Apparel',
+        brand: "Aurora Apparel",
         category: category,
         price: price,
         position: parseInt(position)
@@ -166,8 +173,15 @@
         
         // Push scAdd event
         window.adobeDataLayer.push({
-          event: 'scAdd',
-          eventInfo: { eventName: 'scAdd' },
+          event: "scAdd",
+          custData: {
+            custId: "",
+            emailID_plain: "",
+            mobileNo_plain: "",
+            loginStatus: "guest",
+            loginMethod: ""
+          },
+          eventInfo: { eventName: "scAdd" },
           product: [{
             productId: addedProduct.productId,
             name: addedProduct.productName,
@@ -191,7 +205,7 @@
             })),
             totalQuantity: data.cart.reduce((sum, item) => sum + item.quantity, 0),
             totalValue: data.total,
-            currency: 'USD'
+            currency: "USD"
           },
           timestamp: new Date().toISOString()
         });
@@ -253,8 +267,15 @@
       if (data.success) {
         // Push scRemove event
         window.adobeDataLayer.push({
-          event: 'scRemove',
-          eventInfo: { eventName: 'scRemove' },
+          event: "scRemove",
+          custData: {
+            custId: "",
+            emailID_plain: "",
+            mobileNo_plain: "",
+            loginStatus: "guest",
+            loginMethod: ""
+          },
+          eventInfo: { eventName: "scRemove" },
           product: [{
             productId: productId
           }],
@@ -271,7 +292,7 @@
             })),
             totalQuantity: data.cart.reduce((sum, item) => sum + item.quantity, 0),
             totalValue: data.total,
-            currency: 'USD'
+            currency: "USD"
           },
           timestamp: new Date().toISOString()
         });
@@ -306,8 +327,15 @@
 
     // Push scOpen event
     window.adobeDataLayer.push({
-      event: 'scOpen',
-      eventInfo: { eventName: 'scOpen' },
+      event: "scOpen",
+      custData: {
+        custId: "",
+        emailID_plain: "",
+        mobileNo_plain: "",
+        loginStatus: "guest",
+        loginMethod: ""
+      },
+      eventInfo: { eventName: "scOpen" },
       timestamp: new Date().toISOString()
     });
 

@@ -6,6 +6,28 @@
   <title>Order Confirmed - Aurora Apparel</title>
   <meta name="description" content="Thank you for your order!">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' x='50' text-anchor='middle' font-size='80' font-weight='900' fill='%23000'>A</text></svg>">
+  
+  <!-- Adobe Data Layer - Initialize and push pageView BEFORE Launch script -->
+  <script>
+    window.adobeDataLayer = window.adobeDataLayer || [];
+    window.adobeDataLayer.push({
+      event: "pageView",
+      custData: {
+        custId: "",
+        emailID_plain: "",
+        mobileNo_plain: "",
+        loginStatus: "guest",
+        loginMethod: ""
+      },
+      page: {
+        name: "Aurora Apparel:Order Confirmation",
+        type: "thankyou",
+        url: window.location.href
+      },
+      timestamp: new Date().toISOString()
+    });
+  </script>
+  
   <!-- Adobe Launch -->
   <script src="https://assets.adobedtm.com/21b53c73144b/963ce6f23d63/launch-fc69ffb204fb-development.min.js" async></script>
   <link rel="stylesheet" href="/css/styles.css">
@@ -62,18 +84,6 @@
         return;
       }
 
-      // Push page view to Adobe Data Layer
-      window.adobeDataLayer = window.adobeDataLayer || [];
-      window.adobeDataLayer.push({
-        event: 'pageView',
-        page: {
-          name: 'Aurora Apparel:Order Confirmation',
-          type: 'confirmation',
-          url: window.location.href
-        },
-        timestamp: new Date().toISOString()
-      });
-
       loadOrderDetails(orderId);
       updateCartCount();
     });
@@ -106,10 +116,17 @@
 
         // Push purchase event to Adobe Data Layer
         window.adobeDataLayer.push({
-          event: 'purchase',
+          event: "purchase",
+          custData: {
+            custId: "",
+            emailID_plain: order.email || "",
+            mobileNo_plain: "",
+            loginStatus: "guest",
+            loginMethod: ""
+          },
           order: {
             orderId: orderId,
-            currency: 'USD',
+            currency: "USD",
             revenue: subtotal,
             tax: 0,
             shipping: 0,
@@ -119,7 +136,7 @@
             items: order.items.map(item => ({
               productId: item.productId,
               name: item.name,
-              category: item.category || 'Apparel',
+              category: item.category || "Apparel",
               price: item.price,
               quantity: item.quantity,
               color: item.color,
@@ -127,7 +144,7 @@
             })),
             totalQuantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
             totalValue: subtotal,
-            currency: 'USD'
+            currency: "USD"
           },
           shipping: {
             firstName: order.firstName,
@@ -137,7 +154,7 @@
             city: order.city,
             state: order.state,
             zip: order.zip,
-            country: order.country
+            country: order.country || "US"
           },
           timestamp: new Date().toISOString()
         });

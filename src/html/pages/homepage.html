@@ -6,6 +6,28 @@
   <title>Aurora Apparel - Premium Clothing Collection</title>
   <meta name="description" content="Discover Aurora Apparel's premium clothing collection. Shop stylish essentials, denim, outerwear, and more.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' x='50' text-anchor='middle' font-size='80' font-weight='900' fill='%23000'>A</text></svg>">
+  
+  <!-- Adobe Data Layer - Initialize and push pageView BEFORE Launch script -->
+  <script>
+    window.adobeDataLayer = window.adobeDataLayer || [];
+    window.adobeDataLayer.push({
+      event: "pageView",
+      custData: {
+        custId: "",
+        emailID_plain: "",
+        mobileNo_plain: "",
+        loginStatus: "guest",
+        loginMethod: ""
+      },
+      page: {
+        name: "Aurora Apparel:Home",
+        type: "home",
+        url: window.location.href
+      },
+      timestamp: new Date().toISOString()
+    });
+  </script>
+  
   <!-- Adobe Launch -->
   <script src="https://assets.adobedtm.com/21b53c73144b/963ce6f23d63/launch-fc69ffb204fb-development.min.js" async></script>
   <link rel="stylesheet" href="/css/styles.css">
@@ -160,18 +182,6 @@
   <script>
     // Initialize page
     window.addEventListener('DOMContentLoaded', () => {
-      // Push page view to Adobe Data Layer
-      window.adobeDataLayer = window.adobeDataLayer || [];
-      window.adobeDataLayer.push({
-        event: 'pageView',
-        page: {
-          name: 'Aurora Apparel:Home',
-          type: 'homepage',
-          url: window.location.href
-        },
-        timestamp: new Date().toISOString()
-      });
-
       updateCartCount();
     });
   </script>

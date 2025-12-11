@@ -6,6 +6,13 @@
   <title>Product Details - Aurora Apparel</title>
   <meta name="description" content="View product details and add to cart.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' x='50' text-anchor='middle' font-size='80' font-weight='900' fill='%23000'>A</text></svg>">
+  
+  <!-- Adobe Data Layer - Initialize BEFORE Launch script -->
+  <script>
+    window.adobeDataLayer = window.adobeDataLayer || [];
+    // Note: pageView for PDP will be pushed after product loads with correct product name
+  </script>
+  
   <!-- Adobe Launch -->
   <script src="https://assets.adobedtm.com/21b53c73144b/963ce6f23d63/launch-fc69ffb204fb-development.min.js" async></script>
   <link rel="stylesheet" href="/css/styles.css">
@@ -111,26 +118,40 @@
           </div>
         `;
 
-        // Push product detail view to Adobe Data Layer
-        window.adobeDataLayer = window.adobeDataLayer || [];
+        // Push pageView first, then productDetail to Adobe Data Layer
         window.adobeDataLayer.push({
-          event: 'pageView',
+          event: "pageView",
+          custData: {
+            custId: "",
+            emailID_plain: "",
+            mobileNo_plain: "",
+            loginStatus: "guest",
+            loginMethod: ""
+          },
           page: {
             name: `Aurora Apparel:${currentProduct.productName}`,
-            type: 'product',
+            type: "pdp",
             url: window.location.href
           },
           timestamp: new Date().toISOString()
         });
 
         window.adobeDataLayer.push({
-          event: 'productDetail',
+          event: "productDetail",
+          custData: {
+            custId: "",
+            emailID_plain: "",
+            mobileNo_plain: "",
+            loginStatus: "guest",
+            loginMethod: ""
+          },
           product: [{
             productId: currentProduct.productId,
             name: currentProduct.productName,
             brand: currentProduct.brand,
             category: currentProduct.productCategory,
-            price: currentProduct.price
+            price: currentProduct.price,
+            image: currentProduct.image
           }],
           timestamp: new Date().toISOString()
         });

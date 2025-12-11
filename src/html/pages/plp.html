@@ -6,6 +6,28 @@
   <title>Shop All - Aurora Apparel</title>
   <meta name="description" content="Browse our complete collection of premium clothing essentials.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' x='50' text-anchor='middle' font-size='80' font-weight='900' fill='%23000'>A</text></svg>">
+  
+  <!-- Adobe Data Layer - Initialize and push pageView BEFORE Launch script -->
+  <script>
+    window.adobeDataLayer = window.adobeDataLayer || [];
+    window.adobeDataLayer.push({
+      event: "pageView",
+      custData: {
+        custId: "",
+        emailID_plain: "",
+        mobileNo_plain: "",
+        loginStatus: "guest",
+        loginMethod: ""
+      },
+      page: {
+        name: "Aurora Apparel:Product Listing",
+        type: "plp",
+        url: window.location.href
+      },
+      timestamp: new Date().toISOString()
+    });
+  </script>
+  
   <!-- Adobe Launch -->
   <script src="https://assets.adobedtm.com/21b53c73144b/963ce6f23d63/launch-fc69ffb204fb-development.min.js" async></script>
   <link rel="stylesheet" href="/css/styles.css">
@@ -45,18 +67,6 @@
   <script src="/js/client.js"></script>
   <script>
     window.addEventListener('DOMContentLoaded', () => {
-      // Push page view to Adobe Data Layer
-      window.adobeDataLayer = window.adobeDataLayer || [];
-      window.adobeDataLayer.push({
-        event: 'pageView',
-        page: {
-          name: 'Aurora Apparel:Product Listing',
-          type: 'category',
-          url: window.location.href
-        },
-        timestamp: new Date().toISOString()
-      });
-
       loadProducts();
       updateCartCount();
     });
@@ -83,12 +93,19 @@
           </div>
         `).join('');
 
-        // Push product impressions
+        // Push product impressions with custData and page context
         window.adobeDataLayer.push({
-          event: 'productImpression',
+          event: "productImpression",
+          custData: {
+            custId: "",
+            emailID_plain: "",
+            mobileNo_plain: "",
+            loginStatus: "guest",
+            loginMethod: ""
+          },
           page: {
-            name: 'Aurora Apparel:Product Listing',
-            type: 'plp',
+            name: "Aurora Apparel:Product Listing",
+            type: "plp",
             url: window.location.href
           },
           products: products.map((product, index) => ({
@@ -97,7 +114,9 @@
             brand: product.brand,
             category: product.productCategory,
             price: product.price,
-            position: index + 1
+            position: index + 1,
+            list: "Product Listing Page",
+            image: product.image
           })),
           timestamp: new Date().toISOString()
         });
