@@ -27,6 +27,11 @@ try {
   console.log('Optional security packages not installed. Run: npm install helmet compression cors');
 }
 
+// Root route - serve homepage (must come before static middleware)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src/html/pages/homepage.html'));
+});
+
 // Serve images (legacy path)
 app.use('/images', express.static(path.join(__dirname, 'public/images'), {
   maxAge: isProduction ? '7d' : 0
@@ -465,11 +470,6 @@ function getSession(req) {
 function generateOrderId() {
   return 'ORD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
 }
-
-// Root route - serve homepage
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'src/html/pages/homepage.html'));
-});
 
 // API Routes
 
