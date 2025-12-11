@@ -466,6 +466,11 @@ function generateOrderId() {
   return 'ORD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
 }
 
+// Root route - serve homepage
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src/html/pages/homepage.html'));
+});
+
 // API Routes
 
 // Get all products
