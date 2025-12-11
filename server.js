@@ -302,7 +302,7 @@ const products = [
     brand: 'Aurora Apparel',
     price: 94.99,
     description: 'Oversized chunky cardigan with button closure. Ultra-cozy and perfect for cooler weather.',
-    image: 'https://images.unsplash.com/photo-1620799140195-e4a4f1b6d33f?w=500&h=700&fit=crop',
+    image: '/images/cardigan.jpg',
     colors: ['Oatmeal', 'Gray', 'Rust'],
     sizes: ['S', 'M', 'L', 'XL']
   },
@@ -390,7 +390,7 @@ const products = [
     brand: 'Aurora Apparel',
     price: 99.99,
     description: 'Lightweight puffer vest with quilted design. Perfect layering piece for transitional weather.',
-    image: 'https://images.unsplash.com/photo-1610226850-0cc7beaa8ce9?w=500&h=700&fit=crop',
+    image: 'https://images.unsplash.com/photo-1620799139507-2a76f79a2f4d?w=500&h=700&fit=crop',
     colors: ['Black', 'Olive', 'Navy'],
     sizes: ['S', 'M', 'L', 'XL']
   },
