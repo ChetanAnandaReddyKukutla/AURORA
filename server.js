@@ -302,7 +302,7 @@ const products = [
     brand: 'Aurora Apparel',
     price: 94.99,
     description: 'Oversized chunky cardigan with button closure. Ultra-cozy and perfect for cooler weather.',
-    image: '/images/cardigan.jpg',
+    image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&h=700&fit=crop',
     colors: ['Oatmeal', 'Gray', 'Rust'],
     sizes: ['S', 'M', 'L', 'XL']
   },
