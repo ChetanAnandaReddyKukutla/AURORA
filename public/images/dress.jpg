@@ -1,0 +1,13 @@
+<svg width="800" height="1000" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ec4899;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#be185d;stop-opacity:0.1" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#grad4)"/>
+  <path d="M 300 250 L 400 200 L 500 250 L 480 700 Q 480 750 450 750 L 350 750 Q 320 750 320 700 Z" fill="white" opacity="0.8"/>
+  <circle cx="400" cy="300" r="60" fill="#ec4899" opacity="0.3"/>
+  <text x="400" y="850" font-family="'Inter', sans-serif" font-size="32" fill="#be185d" text-anchor="middle" font-weight="600">Midi Wrap Dress</text>
+  <text x="400" y="900" font-family="'Inter', sans-serif" font-size="18" fill="#6b7280" text-anchor="middle">Aurora Apparel</text>
+</svg>

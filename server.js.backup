@@ -1,0 +1,1008 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Middleware
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Security and performance middleware (install with: npm install helmet compression cors)
+try {
+  const helmet = require('helmet');
+  const compression = require('compression');
+  const cors = require('cors');
+  
+  app.use(helmet({
+    contentSecurityPolicy: false // Disable for demo; configure properly in production
+  }));
+  app.use(compression());
+  app.use(cors());
+} catch (e) {
+  console.log('Optional security packages not installed. Run: npm install helmet compression cors');
+}
+
+app.use(express.static('public', {
+  maxAge: isProduction ? '1d' : 0
+}));
+
+// In-memory data store
+const products = [
+  {
+    productId: 'AUR-001',
+    productName: 'Premium Cotton Crew Neck Tee',
+    productCategory: 'Essentials',
+    brand: 'Aurora Apparel',
+    price: 39.99,
+    description: 'Crafted from 100% organic cotton with a relaxed fit. Our signature crew neck tee combines comfort with timeless style. Pre-shrunk for lasting quality.',
+    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&h=800&fit=crop',
+    colors: ['White', 'Black', 'Navy', 'Heather Gray'],
+    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+  },
+  {
+    productId: 'AUR-002',
+    productName: 'High-Waisted Slim Fit Jeans',
+    productCategory: 'Denim',
+    brand: 'Aurora Apparel',
+    price: 89.99,
+    description: 'Premium stretch denim with a flattering high-waisted cut. Features sustainable production methods and reinforced stitching for durability.',
+    image: 'https://images.unsplash.com/photo-1542272454315-7f6fabf578f2?w=600&h=800&fit=crop',
+    colors: ['Dark Indigo', 'Light Wash', 'Black'],
+    sizes: ['24', '26', '28', '30', '32', '34']
+  },
+  {
+    productId: 'AUR-003',
+    productName: 'Oversized Pullover Hoodie',
+    productCategory: 'Outerwear',
+    brand: 'Aurora Apparel',
+    price: 69.99,
+    description: 'Ultra-soft fleece hoodie with a relaxed oversized fit. Double-lined hood and kangaroo pocket. Perfect for layering or wearing solo.',
+    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=600&h=800&fit=crop',
+    colors: ['Charcoal', 'Dusty Rose', 'Sage Green', 'Cream'],
+    sizes: ['XS', 'S', 'M', 'L', 'XL']
+  },
+  {
+    productId: 'AUR-004',
+    productName: 'Midi Wrap Dress',
+    productCategory: 'Dresses',
+    brand: 'Aurora Apparel',
+    price: 119.99,
+    description: 'Elegant midi wrap dress in flowing fabric. Adjustable waist tie and flutter sleeves create a universally flattering silhouette. Versatile for any occasion.',
+    image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&h=800&fit=crop',
+    colors: ['Floral Print', 'Solid Black', 'Burgundy'],
+    sizes: ['XXS', 'XS', 'S', 'M', 'L', 'XL']
+  },
+  {
+    productId: 'AUR-005',
+    productName: 'Ribbed Knit Cardigan',
+    productCategory: 'Knitwear',
+    brand: 'Aurora Apparel',
+    price: 79.99,
+    description: 'Luxuriously soft ribbed cardigan with button closure. Made from sustainable wool blend. Essential layering piece for every wardrobe.',
+    image: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600&h=800&fit=crop',
+    colors: ['Oatmeal', 'Camel', 'Forest Green'],
+    sizes: ['XS', 'S', 'M', 'L', 'XL']
+  },
+  {
+    productId: 'AUR-006',
+    productName: 'Wide-Leg Linen Pants',
+    productCategory: 'Bottoms',
+    brand: 'Aurora Apparel',
+    price: 74.99,
+    description: 'Breezy wide-leg pants in 100% European linen. High-waisted with an elastic back waistband for comfort. Perfect for warm weather styling.',
+    image: 'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=600&h=800&fit=crop',
+    colors: ['White', 'Sand', 'Black'],
+    sizes: ['XS', 'S', 'M', 'L', 'XL']
+  }
+];
+
+// Session data (in-memory)
+const sessions = {};
+
+// Helper to get or create session
+function getSession(req) {
+  let sessionId = req.cookies.sessionId;
+  if (!sessionId || !sessions[sessionId]) {
+    sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    sessions[sessionId] = {
+      cart: []
+    };
+  }
+  return { sessionId, session: sessions[sessionId] };
+}
+
+// Helper to generate order ID
+function generateOrderId() {
+  return 'ORD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+}
+
+// API Routes
+
+// Get all products
+app.get('/api/products', (req, res) => {
+  res.json(products);
+});
+
+// Get cart
+app.get('/api/cart', (req, res) => {
+  const { sessionId, session } = getSession(req);
+    event: 'pageView',
+    eventInfo: { eventName: 'pageView' },
+    page: {
+      language: 'en-US',
+      pageName: 'Home',
+      pageType: 'home',
+      url: data.url
+    },
+    custData: {
+      custId: '',
+      emailID_plain: '',
+      loginMethod: '',
+      loginStatus: 'guest',
+      mobileNo_plain: ''
+    },
+    timestamp: new Date().toISOString()
+  };
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aurora Apparel - Home</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script>
+    // Initialize adobeDataLayer
+    window.adobeDataLayer = window.adobeDataLayer || [];
+    
+    // Server-side page push
+    window.adobeDataLayer.push(${JSON.stringify(dataLayerPush, null, 2)});
+    
+    // NOTE: Adobe Launch embed script should be placed here, after the server push
+    // Example: <script src="//assets.adobedtm.com/launch-XXXXX.min.js" async></script>
+  </script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo">Aurora Apparel</h1>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/plp">Shop</a>
+        <a href="/cart" id="cart-link">
+          Cart
+          ${data.cartCount > 0 ? `<span class="cart-badge">${data.cartCount}</span>` : ''}
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-content">
+        <h2>Elevate Your Everyday Style</h2>
+        <p>Discover thoughtfully designed essentials crafted for modern living</p>
+        <a href="/plp" class="btn btn-primary">Shop New Arrivals</a>
+      </div>
+    </section>
+
+    <section class="featured">
+      <div class="container">
+        <h3>Curated Collections</h3>
+        <p>Timeless pieces designed with sustainable materials and exceptional craftsmanship</p>
+        <a href="/plp" class="btn btn-secondary">Explore All Products</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Aurora Apparel. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/adl-utils.js"></script>
+  <script src="/client.js"></script>
+</body>
+</html>`;
+}
+
+function renderPLPPage(data) {
+  const dataLayerPush = {
+    event: 'productImpression',
+    eventInfo: { eventName: 'productImpression' },
+    page: {
+      language: 'en-US',
+      pageName: 'Product Listing',
+      pageType: 'plp',
+      url: data.url
+    },
+    productList: data.products.map((p, idx) => ({
+      productId: p.productId,
+      productName: p.productName,
+      productCategory: p.productCategory,
+      brand: p.brand,
+      price: p.price,
+      position: idx + 1
+    })),
+    custData: {
+      custId: '',
+      emailID_plain: '',
+      loginMethod: '',
+      loginStatus: 'guest',
+      mobileNo_plain: ''
+    },
+    timestamp: new Date().toISOString()
+  };
+
+  const productCards = data.products.map((p, idx) => `
+    <div class="product-card">
+      <div class="product-image">
+        <img src="${p.image}" alt="${p.productName}" onerror="this.src='/images/placeholder.jpg'">
+      </div>
+      <h3>${p.productName}</h3>
+      <p class="price">$${p.price.toFixed(2)}</p>
+      <p class="category">${p.productCategory}</p>
+      <a href="/pdp/${p.productId}" class="btn btn-secondary view-product" data-product-id="${p.productId}" data-position="${idx + 1}">View Details</a>
+    </div>
+  `).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop - Aurora Apparel</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script>
+    // Initialize adobeDataLayer
+    window.adobeDataLayer = window.adobeDataLayer || [];
+    
+    // Server-side page push with productList
+    window.adobeDataLayer.push(${JSON.stringify(dataLayerPush, null, 2)});
+    
+    // NOTE: Adobe Launch embed script should be placed here
+  </script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo"><a href="/">Aurora Apparel</a></h1>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/plp">Shop</a>
+        <a href="/cart" id="cart-link">Cart (<span id="cart-count">${data.cartCount}</span>)</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="plp">
+      <div class="container">
+        <h2>Our Collection</h2>
+        <div class="product-grid">
+          ${productCards}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Aurora Apparel. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/adl-utils.js"></script>
+  <script src="/client.js"></script>
+</body>
+</html>`;
+}
+
+function renderPDPPage(data) {
+  const product = data.product;
+  
+  const dataLayerPush = {
+    event: 'productDetail',
+    eventInfo: { eventName: 'productDetail' },
+    page: {
+      language: 'en-US',
+      pageName: `Product Detail - ${product.productName}`,
+      pageType: 'pdp',
+      url: data.url
+    },
+    product: [{
+      productId: product.productId,
+      productName: product.productName,
+      productCategory: product.productCategory,
+      brand: product.brand,
+      price: product.price,
+      quantity: 1
+    }],
+    custData: {
+      custId: '',
+      emailID_plain: '',
+      loginMethod: '',
+      loginStatus: 'guest',
+      mobileNo_plain: ''
+    },
+    timestamp: new Date().toISOString()
+  };
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${product.productName} - Aurora Apparel</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script>
+    // Initialize adobeDataLayer
+    window.adobeDataLayer = window.adobeDataLayer || [];
+    
+    // Server-side page push with product array
+    window.adobeDataLayer.push(${JSON.stringify(dataLayerPush, null, 2)});
+    
+    // NOTE: Adobe Launch embed script should be placed here
+  </script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo"><a href="/">Aurora Apparel</a></h1>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/plp">Shop</a>
+        <a href="/cart" id="cart-link">Cart (<span id="cart-count">${data.cartCount}</span>)</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="pdp">
+      <div class="container">
+        <div class="product-detail">
+          <div class="product-image-large">
+            <img src="${product.image}" alt="${product.productName}" onerror="this.src='/images/placeholder.jpg'">
+          </div>
+          <div class="product-info">
+            <h2>${product.productName}</h2>
+            <p class="price">$${product.price.toFixed(2)}</p>
+            <p class="brand">${product.brand}</p>
+            <p class="category">${product.productCategory}</p>
+            <p class="description">${product.description}</p>
+            
+            <div class="add-to-cart-section">
+              <label for="quantity">Quantity:</label>
+              <input type="number" id="quantity" value="1" min="1" max="10">
+              <button class="btn btn-primary" id="add-to-cart" data-product-id="${product.productId}">Add to Cart</button>
+            </div>
+            
+            <div id="add-to-cart-message" class="message"></div>
+            
+            <a href="/plp" class="btn btn-secondary">Back to Shop</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Aurora Apparel. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/adl-utils.js"></script>
+  <script src="/client.js"></script>
+</body>
+</html>`;
+}
+
+function renderCartPage(data) {
+  const cart = data.cart;
+  const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  
+  const dataLayerPush = {
+    event: 'scView',
+    eventInfo: { eventName: 'scView' },
+    page: {
+      language: 'en-US',
+      pageName: 'Shopping Cart',
+      pageType: 'cart',
+      url: data.url
+    },
+    cart: {
+      items: cart.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        price: item.price,
+        qty: item.qty
+      })),
+      total: total
+    },
+    custData: {
+      custId: '',
+      emailID_plain: '',
+      loginMethod: '',
+      loginStatus: 'guest',
+      mobileNo_plain: ''
+    },
+    timestamp: new Date().toISOString()
+  };
+
+  const cartItems = cart.length > 0 ? cart.map(item => `
+    <tr>
+      <td>${item.productName}</td>
+      <td>$${item.price.toFixed(2)}</td>
+      <td>${item.qty}</td>
+      <td>$${(item.price * item.qty).toFixed(2)}</td>
+      <td><button class="btn btn-danger remove-item" data-product-id="${item.productId}">Remove</button></td>
+    </tr>
+  `).join('') : '<tr><td colspan="5" class="empty-cart">Your cart is empty</td></tr>';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cart - Aurora Apparel</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script>
+    // Initialize adobeDataLayer
+    window.adobeDataLayer = window.adobeDataLayer || [];
+    
+    // Server-side page push with cart
+    window.adobeDataLayer.push(${JSON.stringify(dataLayerPush, null, 2)});
+    
+    // NOTE: Adobe Launch embed script should be placed here
+  </script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo"><a href="/">Aurora Apparel</a></h1>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/plp">Shop</a>
+        <a href="/cart" id="cart-link">Cart (<span id="cart-count">${data.cartCount}</span>)</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="cart-page">
+      <div class="container">
+        <h2>Shopping Cart</h2>
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Subtotal</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${cartItems}
+          </tbody>
+        </table>
+        
+        ${cart.length > 0 ? `
+          <div class="cart-summary">
+            <h3>Total: $${total.toFixed(2)}</h3>
+            <a href="/checkout" class="btn btn-primary">Proceed to Checkout</a>
+          </div>
+        ` : '<a href="/plp" class="btn btn-primary">Continue Shopping</a>'}
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Aurora Apparel. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/adl-utils.js"></script>
+  <script src="/client.js"></script>
+</body>
+</html>`;
+}
+
+function renderCheckoutPage(data) {
+  const cart = data.cart;
+  const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  
+  const dataLayerPush = {
+    event: 'scCheckout',
+    eventInfo: { eventName: 'scCheckout' },
+    page: {
+      language: 'en-US',
+      pageName: 'Checkout',
+      pageType: 'checkout',
+      url: data.url
+    },
+    cart: {
+      items: cart.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        price: item.price,
+        qty: item.qty
+      })),
+      total: total
+    },
+    custData: {
+      custId: '',
+      emailID_plain: '',
+      loginMethod: '',
+      loginStatus: 'guest',
+      mobileNo_plain: ''
+    },
+    timestamp: new Date().toISOString()
+  };
+
+  if (cart.length === 0) {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Aurora Apparel</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo"><a href="/">Aurora Apparel</a></h1>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/plp">Shop</a>
+        <a href="/cart">Cart (<span id="cart-count">0</span>)</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <section class="checkout-page">
+      <div class="container">
+        <h2>Checkout</h2>
+        <p class="error">Your cart is empty. <a href="/plp">Continue shopping</a></p>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Aurora Apparel. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>`;
+  }
+
+  const orderSummary = cart.map(item => `
+    <tr>
+      <td>${item.productName}</td>
+      <td>${item.qty}</td>
+      <td>$${(item.price * item.qty).toFixed(2)}</td>
+    </tr>
+  `).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Aurora Apparel</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script>
+    // Initialize adobeDataLayer
+    window.adobeDataLayer = window.adobeDataLayer || [];
+    
+    // Server-side page push
+    window.adobeDataLayer.push(${JSON.stringify(dataLayerPush, null, 2)});
+    
+    // NOTE: Adobe Launch embed script should be placed here
+  </script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo"><a href="/">Aurora Apparel</a></h1>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/plp">Shop</a>
+        <a href="/cart" id="cart-link">Cart (<span id="cart-count">${data.cartCount}</span>)</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="checkout-page">
+      <div class="container">
+        <h2>Checkout</h2>
+        
+        <div class="checkout-layout">
+          <div class="checkout-form">
+            <h3>Customer Information</h3>
+            <form id="checkout-form" method="POST" action="/checkout">
+              <div class="form-group">
+                <label for="name">Full Name *</label>
+                <input type="text" id="name" name="name" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email" id="email" name="email" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone">
+              </div>
+              
+              <h3>Shipping Address</h3>
+              
+              <div class="form-group">
+                <label for="address">Street Address *</label>
+                <input type="text" id="address" name="address" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="city">City *</label>
+                <input type="text" id="city" name="city" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="state">State *</label>
+                <input type="text" id="state" name="state" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="zip">ZIP Code *</label>
+                <input type="text" id="zip" name="zip" required>
+              </div>
+              
+              <h3>Payment Information (Demo - Fake Payment)</h3>
+              
+              <div class="form-group">
+                <label for="cardNumber">Card Number *</label>
+                <input type="text" id="cardNumber" name="cardNumber" placeholder="4111 1111 1111 1111" required>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="expiry">Expiry *</label>
+                  <input type="text" id="expiry" name="expiry" placeholder="MM/YY" required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="cvv">CVV *</label>
+                  <input type="text" id="cvv" name="cvv" placeholder="123" required>
+                </div>
+              </div>
+              
+              <button type="submit" class="btn btn-primary btn-large">Place Order</button>
+            </form>
+          </div>
+          
+          <div class="order-summary">
+            <h3>Order Summary</h3>
+            <table class="summary-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Qty</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${orderSummary}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2"><strong>Total</strong></td>
+                  <td><strong>$${total.toFixed(2)}</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Aurora Apparel. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/adl-utils.js"></script>
+  <script src="/client.js"></script>
+</body>
+</html>`;
+}
+
+function renderThankYouPage(data) {
+  const order = data.order;
+  
+  const dataLayerPush = {
+    event: 'purchase',
+    eventInfo: { eventName: 'purchase' },
+    page: {
+      language: 'en-US',
+      pageName: 'Order Confirmation',
+      pageType: 'thankyou',
+      url: data.url
+    },
+    order: {
+      id: order.id,
+      revenue: order.revenue,
+      products: order.products.map(p => ({
+        productId: p.productId,
+        productName: p.productName,
+        price: p.price,
+        qty: p.qty
+      })),
+      customerName: order.customerName
+    },
+    custData: {
+      custId: '',
+      emailID_plain: order.email || '',
+      loginMethod: '',
+      loginStatus: 'guest',
+      mobileNo_plain: ''
+    },
+    timestamp: new Date().toISOString()
+  };
+
+  const orderItems = order.products.map(p => `
+    <tr>
+      <td>${p.productName}</td>
+      <td>${p.qty}</td>
+      <td>$${p.price.toFixed(2)}</td>
+      <td>$${(p.price * p.qty).toFixed(2)}</td>
+    </tr>
+  `).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation - Aurora Apparel</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script>
+    // Initialize adobeDataLayer
+    window.adobeDataLayer = window.adobeDataLayer || [];
+    
+    // Server-side purchase push (only rendered once per order)
+    window.adobeDataLayer.push(${JSON.stringify(dataLayerPush, null, 2)});
+    
+    // NOTE: Adobe Launch embed script should be placed here
+  </script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo"><a href="/">Aurora Apparel</a></h1>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/plp">Shop</a>
+        <a href="/cart">Cart (<span id="cart-count">0</span>)</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="thankyou-page">
+      <div class="container">
+        <div class="success-message">
+          <div class="success-checkmark"></div>
+          <h2>Order Confirmed!</h2>
+          <p>Thank you for your purchase, ${order.customerName}!</p>
+          <p class="order-id">Order ID: <strong>${order.id}</strong></p>
+          <p>A confirmation email has been sent to ${order.email || 'your email address'}.</p>
+        </div>
+        
+        <div class="order-details">
+          <h3>Order Details</h3>
+          <table class="order-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orderItems}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3"><strong>Total</strong></td>
+                <td><strong>$${order.revenue.toFixed(2)}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        
+        <div class="actions">
+          <a href="/plp" class="btn btn-primary">Continue Shopping</a>
+          <a href="/" class="btn btn-secondary">Back to Home</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Aurora Apparel. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/adl-utils.js"></script>
+  <script src="/client.js"></script>
+</body>
+</html>`;
+}
+
+// API Routes
+
+// Get all products
+app.get('/api/products', (req, res) => {
+  res.json(products);
+});
+
+// Get cart
+app.get('/api/cart', (req, res) => {
+  const { sessionId, session } = getSession(req);
+  res.cookie('sessionId', sessionId, { httpOnly: true });
+  
+  const cartItems = session.cart.map(item => {
+    const product = products.find(p => p.productId === item.productId);
+    return {
+      ...item,
+      image: product ? product.image : '/images/placeholder.jpg',
+      name: item.productName
+    };
+  });
+  
+  res.json({
+    sessionId: sessionId,
+    items: cartItems,
+    total: session.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  });
+});
+
+// Add to cart
+app.post('/api/cart/add', (req, res) => {
+  const { sessionId, session } = getSession(req);
+  res.cookie('sessionId', sessionId, { httpOnly: true });
+  
+  const { productId, color, size, quantity } = req.body;
+  const qty = parseInt(quantity) || 1;
+  
+  const product = products.find(p => p.productId === productId);
+  
+  if (!product) {
+    return res.status(404).json({ error: 'Product not found' });
+  }
+  
+  // Check if exact item (same product, color, size) already in cart
+  const existingItem = session.cart.find(
+    item => item.productId === productId && item.color === color && item.size === size
+  );
+  
+  if (existingItem) {
+    existingItem.quantity += qty;
+  } else {
+    session.cart.push({
+      productId: product.productId,
+      productName: product.productName,
+      productCategory: product.productCategory,
+      brand: product.brand,
+      price: product.price,
+      color: color,
+      size: size,
+      quantity: qty
+    });
+  }
+  
+  res.json({
+    success: true,
+    cartCount: session.cart.reduce((sum, item) => sum + item.quantity, 0)
+  });
+});
+
+// Remove from cart
+app.post('/api/cart/remove', (req, res) => {
+  const { sessionId, session } = getSession(req);
+  res.cookie('sessionId', sessionId, { httpOnly: true });
+  
+  const { productId, color, size } = req.body;
+  
+  session.cart = session.cart.filter(
+    item => !(item.productId === productId && item.color === color && item.size === size)
+  );
+  
+  res.json({
+    success: true,
+    cartCount: session.cart.reduce((sum, item) => sum + item.quantity, 0)
+  });
+});
+
+// Get order details
+app.get('/api/order/:orderId', (req, res) => {
+  const { sessionId, session } = getSession(req);
+  
+  if (!session.lastOrder || session.lastOrder.id !== req.params.orderId) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+  
+  res.json(session.lastOrder);
+});
+
+// Process checkout (fake payment)
+app.post('/api/checkout', (req, res) => {
+  const { sessionId, session } = getSession(req);
+  
+  if (session.cart.length === 0) {
+    return res.json({ success: false, message: 'Cart is empty' });
+  }
+  
+  const { firstName, lastName, email, address, city, state, zip, cardNumber, expiry, cvv } = req.body;
+  
+  // Generate order
+  const orderId = generateOrderId();
+  const orderRevenue = session.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  const order = {
+    id: orderId,
+    revenue: orderRevenue,
+    items: session.cart.map(item => ({
+      productId: item.productId,
+      name: item.productName,
+      price: item.price,
+      quantity: item.quantity,
+      color: item.color,
+      size: item.size
+    })),
+    customerName: `${firstName} ${lastName}`,
+    email: email,
+    shippingAddress: { address, city, state, zip },
+    createdAt: new Date().toISOString(),
+    sessionId: sessionId
+  };
+  
+  // Store order in session
+  session.lastOrder = order;
+  
+  // Clear cart
+  session.cart = [];
+  
+  res.json({ success: true, orderId: orderId });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Aurora Apparel server running at http://localhost:${PORT}`);
+  console.log('Routes:');
+  console.log('  GET  /           - Home page');
+  console.log('  GET  /plp        - Product Listing Page');
+  console.log('  GET  /pdp/:id    - Product Detail Page');
+  console.log('  GET  /cart       - Shopping Cart');
+  console.log('  GET  /checkout   - Checkout Form');
+  console.log('  GET  /thankyou   - Order Confirmation');
+  console.log('  GET  /api/cart   - Get cart JSON');
+  console.log('  POST /api/cart/add    - Add item to cart');
+  console.log('  POST /api/cart/remove - Remove item from cart');
+  console.log('  POST /checkout   - Process order');
+});

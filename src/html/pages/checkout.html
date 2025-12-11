@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Aurora Apparel</title>
+  <meta name="description" content="Complete your order securely.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' x='50' text-anchor='middle' font-size='80' font-weight='900' fill='%23000'>A</text></svg>">
+  <!-- Adobe Launch: replace src with your production embed URL -->
+  <script src="https://assets.adobedtm.com/REPLACE_WITH_YOUR_ADOBE_LAUNCH_URL.js"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/adl-utils.js"></script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="logo"><a href="/homepage.html">AURORA</a></div>
+      <nav>
+        <a href="/homepage.html">Home</a>
+        <a href="/plp.html">Collection</a>
+        <a href="/cart.html">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <h1>Checkout</h1>
+      
+      <div class="checkout-container">
+        <form id="checkout-form" class="checkout-form">
+          <h2>Shipping Information</h2>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstName">First Name *</label>
+              <input type="text" id="firstName" name="firstName" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="lastName">Last Name *</label>
+              <input type="text" id="lastName" name="lastName" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="address">Street Address *</label>
+            <input type="text" id="address" name="address" required>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="city">City *</label>
+              <input type="text" id="city" name="city" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="state">State *</label>
+              <input type="text" id="state" name="state" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="zip">ZIP Code *</label>
+              <input type="text" id="zip" name="zip" required>
+            </div>
+          </div>
+          
+          <h2>Payment Information</h2>
+          <p class="form-note">This is a demo - no real payment processing</p>
+          
+          <div class="form-group">
+            <label for="cardNumber">Card Number *</label>
+            <input type="text" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456" required>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="expiry">Expiry Date *</label>
+              <input type="text" id="expiry" name="expiry" placeholder="MM/YY" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="cvv">CVV *</label>
+              <input type="text" id="cvv" name="cvv" placeholder="123" required>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn-primary btn-place-order">
+            Place Order
+          </button>
+        </form>
+        
+        <div class="order-summary" id="order-summary">
+          <!-- Order summary will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Aurora Apparel. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/client.js"></script>
+  <script>
+    let cartData = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Push page view to Adobe Data Layer
+      window.adobeDataLayer = window.adobeDataLayer || [];
+      window.adobeDataLayer.push({
+        event: 'pageView',
+        page: {
+          name: 'Aurora Apparel:Checkout',
+          type: 'checkout',
+          url: window.location.href
+        },
+        timestamp: new Date().toISOString()
+      });
+
+      loadOrderSummary();
+      updateCartCount();
+
+      document.getElementById('checkout-form').addEventListener('submit', handleCheckout);
+    });
+
+    async function loadOrderSummary() {
+      try {
+        const response = await fetch('/api/cart');
+        cartData = await response.json();
+        
+        if (!cartData.items || cartData.items.length === 0) {
+          window.location.href = '/cart.html';
+          return;
+        }
+
+        const subtotal = cartData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const shipping = 0;
+        const total = subtotal + shipping;
+
+        const summary = document.getElementById('order-summary');
+        summary.innerHTML = `
+          <h2>Order Summary</h2>
+          <div class="summary-items">
+            ${cartData.items.map(item => `
+              <div class="summary-item">
+                <span>${item.name} (${item.quantity}x)</span>
+                <span>$${(item.price * item.quantity).toFixed(2)}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="summary-totals">
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span>$${subtotal.toFixed(2)}</span>
+            </div>
+            <div class="summary-row">
+              <span>Shipping:</span>
+              <span>${shipping === 0 ? 'FREE' : '$' + shipping.toFixed(2)}</span>
+            </div>
+            <div class="summary-row summary-total">
+              <strong>Total:</strong>
+              <strong>$${total.toFixed(2)}</strong>
+            </div>
+          </div>
+        `;
+
+        // Push checkout start to Adobe Data Layer
+        window.adobeDataLayer.push({
+          event: 'scCheckout',
+          cart: {
+            items: cartData.items.map(item => ({
+              productId: item.productId,
+              name: item.name,
+              category: item.category,
+              price: item.price,
+              quantity: item.quantity,
+              color: item.color,
+              size: item.size
+            })),
+            totalQuantity: cartData.items.reduce((sum, item) => sum + item.quantity, 0),
+            totalValue: cartData.total,
+            currency: 'USD'
+          },
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error loading order summary:', error);
+      }
+    }
+
+    async function handleCheckout(e) {
+      e.preventDefault();
+      
+      const button = document.querySelector('.btn-place-order');
+      button.disabled = true;
+      button.innerHTML = '<span class="loading-spinner"></span> Processing...';
+
+      try {
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+
+        const response = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // Clear cart from localStorage after successful order
+          localStorage.removeItem('auroraApparel_cart');
+          window.location.href = `/thankyou.html?order=${result.orderId}`;
+        } else {
+          throw new Error(result.message || 'Checkout failed');
+        }
+      } catch (error) {
+        console.error('Checkout error:', error);
+        showToast('Checkout failed. Please try again.', 'error');
+        button.disabled = false;
+        button.innerHTML = 'Place Order';
+      }
+    }
+  </script>
+</body>
+</html>

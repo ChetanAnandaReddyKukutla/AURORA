@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmed - Aurora Apparel</title>
+  <meta name="description" content="Thank you for your order!">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' x='50' text-anchor='middle' font-size='80' font-weight='900' fill='%23000'>A</text></svg>">
+  <!-- Adobe Launch: replace src with your production embed URL -->
+  <script src="https://assets.adobedtm.com/REPLACE_WITH_YOUR_ADOBE_LAUNCH_URL.js"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/adl-utils.js"></script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="logo"><a href="/homepage.html">AURORA</a></div>
+      <nav>
+        <a href="/homepage.html">Home</a>
+        <a href="/plp.html">Collection</a>
+        <a href="/cart.html">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="thankyou-container">
+        <div class="checkmark-circle">
+          <div class="checkmark"></div>
+        </div>
+        
+        <h1>Thank You for Your Order!</h1>
+        <p class="thankyou-message" id="thankyou-greeting">Your order has been successfully placed.</p>
+        
+        <div class="order-details" id="order-details">
+          <!-- Order details will be loaded here -->
+        </div>
+        
+        <div class="thankyou-actions">
+          <a href="/homepage.html" class="btn-primary">Back to Home</a>
+          <a href="/plp.html" class="btn-secondary">Continue Shopping</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Aurora Apparel. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/js/client.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('order');
+      
+      if (!orderId) {
+        window.location.href = '/';
+        return;
+      }
+
+      // Push page view to Adobe Data Layer
+      window.adobeDataLayer = window.adobeDataLayer || [];
+      window.adobeDataLayer.push({
+        event: 'pageView',
+        page: {
+          name: 'Aurora Apparel:Order Confirmation',
+          type: 'confirmation',
+          url: window.location.href
+        },
+        timestamp: new Date().toISOString()
+      });
+
+      loadOrderDetails(orderId);
+      updateCartCount();
+    });
+
+    async function loadOrderDetails(orderId) {
+      // Check if purchase event already fired for this order (dedup via sessionStorage)
+      const purchaseKey = `purchase_${orderId}`;
+      if (sessionStorage.getItem(purchaseKey)) {
+        console.log('Purchase event already fired for this order, skipping dedup');
+        displayOrderDetails(orderId);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/order/${orderId}`);
+        const order = await response.json();
+        
+        if (!order || !order.items) {
+          document.getElementById('order-details').innerHTML = `
+            <p class="order-number">Order #${orderId}</p>
+            <p>We've sent a confirmation email with your order details.</p>
+          `;
+          return;
+        }
+
+        const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+        // Mark purchase event as fired
+        sessionStorage.setItem(purchaseKey, 'true');
+
+        // Push purchase event to Adobe Data Layer
+        window.adobeDataLayer.push({
+          event: 'purchase',
+          order: {
+            orderId: orderId,
+            currency: 'USD',
+            revenue: subtotal,
+            tax: 0,
+            shipping: 0,
+            discount: 0
+          },
+          cart: {
+            items: order.items.map(item => ({
+              productId: item.productId,
+              name: item.name,
+              category: item.category || 'Apparel',
+              price: item.price,
+              quantity: item.quantity,
+              color: item.color,
+              size: item.size
+            })),
+            totalQuantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+            totalValue: subtotal,
+            currency: 'USD'
+          },
+          shipping: {
+            firstName: order.firstName,
+            lastName: order.lastName,
+            email: order.email,
+            address: order.address,
+            city: order.city,
+            state: order.state,
+            zip: order.zip,
+            country: order.country
+          },
+          timestamp: new Date().toISOString()
+        });
+
+        displayOrderDetails(orderId);
+      } catch (error) {
+        console.error('Error loading order details:', error);
+        document.getElementById('order-details').innerHTML = `
+          <p class="order-number">Order #${orderId}</p>
+          <p>We've sent a confirmation email with your order details.</p>
+        `;
+      }
+    }
+
+    function displayOrderDetails(orderId) {
+      fetch(`/api/order/${orderId}`)
+        .then(res => res.json())
+        .then(order => {
+          const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          const customerName = order.firstName && order.lastName 
+            ? `${order.firstName} ${order.lastName}` 
+            : 'Valued Customer';
+          document.getElementById('thankyou-greeting').textContent = `Thank you, ${customerName}! Your order has been successfully placed.`;
+
+          document.getElementById('order-details').innerHTML = `
+            <p class="order-number">Order #${orderId}</p>
+            <p>We've sent a confirmation email to <strong>${order.email}</strong></p>
+            
+            <div class="shipping-info">
+              <h3>Shipping To:</h3>
+              <p>${order.firstName} ${order.lastName}<br>
+              ${order.address}<br>
+              ${order.city}, ${order.state} ${order.zip}<br>
+              ${order.country}</p>
+            </div>
+            
+            <div class="order-items">
+              <h2>Order Items</h2>
+              ${order.items.map(item => `
+                <div class="order-item">
+                  <span>${item.name} (${item.quantity}x)</span>
+                  <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              `).join('')}
+              <div class="order-total">
+                <strong>Total:</strong>
+                <strong>$${subtotal.toFixed(2)}</strong>
+              </div>
+            </div>
+          `;
+        })
+        .catch(error => {
+          console.error('Error displaying order details:', error);
+          document.getElementById('order-details').innerHTML = `
+            <p class="order-number">Order #${orderId}</p>
+            <p>We've sent a confirmation email with your order details.</p>
+          `;
+        });
+    }
+  </script>
+</body>
+</html>

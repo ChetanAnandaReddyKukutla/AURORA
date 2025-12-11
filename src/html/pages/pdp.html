@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Details - Aurora Apparel</title>
+  <meta name="description" content="View product details and add to cart.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' x='50' text-anchor='middle' font-size='80' font-weight='900' fill='%23000'>A</text></svg>">
+  <!-- Adobe Launch: replace src with your production embed URL -->
+  <script src="https://assets.adobedtm.com/REPLACE_WITH_YOUR_ADOBE_LAUNCH_URL.js"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/adl-utils.js"></script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="logo"><a href="/homepage.html">AURORA</a></div>
+      <nav>
+        <a href="/homepage.html">Home</a>
+        <a href="/plp.html">Collection</a>
+        <a href="/cart.html">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <a href="/plp.html" class="back-link">← Back to Collection</a>
+      <div class="pdp-container" id="product-details">
+        <!-- Product details will be loaded here -->
+      </div>
+      
+      <div class="similar-products-section">
+        <h2>SIMILAR PRODUCTS</h2>
+        <div class="similar-products-grid" id="similar-products">
+          <!-- Similar products will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Aurora Apparel. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/client.js"></script>
+  <script>
+    let currentProduct = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const productId = urlParams.get('id');
+      
+      if (productId) {
+        loadProduct(productId);
+      } else {
+        window.location.href = '/plp.html';
+      }
+      
+      updateCartCount();
+    });
+
+    async function loadProduct(productId) {
+      try {
+        const response = await fetch('/api/products');
+        const products = await response.json();
+        currentProduct = products.find(p => p.productId === productId);
+        
+        if (!currentProduct) {
+          window.location.href = '/plp.html';
+          return;
+        }
+
+        // Update page title
+        document.title = `${currentProduct.productName} - Aurora Apparel`;
+
+        const container = document.getElementById('product-details');
+        container.innerHTML = `
+          <div class="pdp-image">
+            <img src="${currentProduct.image}" alt="${currentProduct.productName}">
+          </div>
+          <div class="pdp-info">
+            <h1>${currentProduct.productName}</h1>
+            <p class="pdp-category">${currentProduct.productCategory}</p>
+            <p class="pdp-price">$${currentProduct.price.toFixed(2)}</p>
+            <p class="pdp-description">${currentProduct.description}</p>
+            
+            <div class="pdp-options">
+              <div class="option-group">
+                <label>Color:</label>
+                <select id="color-select">
+                  ${currentProduct.colors.map(color => `<option value="${color}">${color}</option>`).join('')}
+                </select>
+              </div>
+              
+              <div class="option-group">
+                <label>Size:</label>
+                <select id="size-select">
+                  ${currentProduct.sizes.map(size => `<option value="${size}">${size}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            
+            <button class="btn-primary btn-add-to-cart" onclick="addToCartFromPDP()">
+              Add to Cart
+            </button>
+          </div>
+        `;
+
+        // Push product detail view to Adobe Data Layer
+        window.adobeDataLayer = window.adobeDataLayer || [];
+        window.adobeDataLayer.push({
+          event: 'pageView',
+          page: {
+            name: `Aurora Apparel:${currentProduct.productName}`,
+            type: 'product',
+            url: window.location.href
+          },
+          timestamp: new Date().toISOString()
+        });
+
+        window.adobeDataLayer.push({
+          event: 'productDetail',
+          product: [{
+            productId: currentProduct.productId,
+            name: currentProduct.productName,
+            brand: currentProduct.brand,
+            category: currentProduct.productCategory,
+            price: currentProduct.price
+          }],
+          timestamp: new Date().toISOString()
+        });
+
+        // Load similar products
+        loadSimilarProducts(products, currentProduct);
+      } catch (error) {
+        console.error('Error loading product:', error);
+      }
+    }
+
+    function loadSimilarProducts(allProducts, currentProduct) {
+      // Filter products from same category, exclude current product, limit to 4
+      const similarProducts = allProducts
+        .filter(p => p.productCategory === currentProduct.productCategory && p.productId !== currentProduct.productId)
+        .slice(0, 4);
+
+      const container = document.getElementById('similar-products');
+      
+      if (similarProducts.length === 0) {
+        document.querySelector('.similar-products-section').style.display = 'none';
+        return;
+      }
+
+      container.innerHTML = similarProducts.map(product => `
+        <div class="similar-product-card">
+          <a href="/pdp.html?id=${product.productId}">
+            <img src="${product.image}" alt="${product.productName}">
+            <h3>${product.productName}</h3>
+            <p class="similar-product-price">$${product.price.toFixed(2)}</p>
+          </a>
+        </div>
+      `).join('');
+    }
+
+    async function addToCartFromPDP() {
+      if (!currentProduct) return;
+
+      const color = document.getElementById('color-select').value;
+      const size = document.getElementById('size-select').value;
+
+      const button = document.querySelector('.btn-add-to-cart');
+      button.disabled = true;
+      const originalText = button.innerHTML;
+      button.innerHTML = '<span class="loading-spinner"></span> Adding...';
+
+      try {
+        const response = await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            id: currentProduct.productId,
+            color: color,
+            size: size,
+            quantity: 1
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Save cart to localStorage
+          localStorage.setItem('auroraApparel_cart', JSON.stringify(data.cart));
+          
+          // Push scAdd event
+          window.adobeDataLayer.push({
+            event: 'scAdd',
+            eventInfo: { eventName: 'scAdd' },
+            product: [{
+              productId: currentProduct.productId,
+              name: currentProduct.productName,
+              brand: currentProduct.brand,
+              category: currentProduct.productCategory,
+              price: currentProduct.price,
+              quantity: 1,
+              color: color,
+              size: size
+            }],
+            cart: {
+              items: data.cart.map(item => ({
+                productId: item.productId,
+                name: item.productName,
+                brand: item.brand,
+                category: item.productCategory,
+                price: item.price,
+                quantity: item.quantity,
+                color: item.color,
+                size: item.size
+              })),
+              totalQuantity: data.cart.reduce((sum, item) => sum + item.quantity, 0),
+              totalValue: data.total,
+              currency: 'USD'
+            },
+            timestamp: new Date().toISOString()
+          });
+
+          // Show success message
+          button.innerHTML = '✓ Added to Cart';
+          
+          // Update cart count
+          updateCartCount();
+
+          // Show success toast if available
+          if (typeof showToast === 'function') {
+            showToast(`Added ${currentProduct.productName} to cart!`, 'success');
+          }
+
+          setTimeout(() => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+          }, 2000);
+        } else {
+          throw new Error('Failed to add to cart');
+        }
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        button.disabled = false;
+        button.innerHTML = originalText;
+        
+        // Show error message
+        if (typeof showToast === 'function') {
+          showToast('Failed to add to cart. Please try again.', 'error');
+        }
+      }
+    }
+  </script>
+</body>
+</html>

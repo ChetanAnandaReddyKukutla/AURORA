@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop All - Aurora Apparel</title>
+  <meta name="description" content="Browse our complete collection of premium clothing essentials.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' x='50' text-anchor='middle' font-size='80' font-weight='900' fill='%23000'>A</text></svg>">
+  <!-- Adobe Launch: replace src with your production embed URL -->
+  <script src="https://assets.adobedtm.com/REPLACE_WITH_YOUR_ADOBE_LAUNCH_URL.js"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/adl-utils.js"></script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="logo"><a href="/homepage.html">AURORA</a></div>
+      <nav>
+        <a href="/homepage.html">Home</a>
+        <a href="/plp.html">Collection</a>
+        <a href="/cart.html">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container page-header">
+      <h1 class="page-title">Collection</h1>
+      <p class="page-subtitle">Explore our complete collection</p>
+      
+      <div class="product-grid" id="product-grid">
+        <!-- Products will be loaded here -->
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Aurora Apparel. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/client.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      // Push page view to Adobe Data Layer
+      window.adobeDataLayer = window.adobeDataLayer || [];
+      window.adobeDataLayer.push({
+        event: 'pageView',
+        page: {
+          name: 'Aurora Apparel:Product Listing',
+          type: 'category',
+          url: window.location.href
+        },
+        timestamp: new Date().toISOString()
+      });
+
+      loadProducts();
+      updateCartCount();
+    });
+
+    async function loadProducts() {
+      try {
+        const response = await fetch('/api/products');
+        const products = await response.json();
+        
+        const grid = document.getElementById('product-grid');
+        grid.innerHTML = products.map(product => `
+          <div class="product-card" data-product-id="${product.productId}">
+            <div class="product-image" onclick="viewProduct('${product.productId}')">
+              <img src="${product.image}" alt="${product.productName}">
+            </div>
+            <div class="product-info">
+              <p class="product-category">${product.productCategory}</p>
+              <h3 class="product-name" onclick="viewProduct('${product.productId}')">${product.productName}</h3>
+              <p class="product-price">$${product.price.toFixed(2)}</p>
+              <div class="product-actions">
+                <button class="btn btn-secondary" onclick="viewProduct('${product.productId}')">View Details</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+        // Push product impressions
+        window.adobeDataLayer.push({
+          event: 'productImpression',
+          page: {
+            name: 'Aurora Apparel:Product Listing',
+            type: 'plp',
+            url: window.location.href
+          },
+          products: products.map((product, index) => ({
+            productId: product.productId,
+            name: product.productName,
+            brand: product.brand,
+            category: product.productCategory,
+            price: product.price,
+            position: index + 1
+          })),
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error loading products:', error);
+      }
+    }
+
+    function viewProduct(productId) {
+      window.location.href = `/pdp.html?id=${productId}`;
+    }
+  </script>
+</body>
+</html>

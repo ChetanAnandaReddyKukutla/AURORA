@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site Map - Aurora Apparel</title>
+  <meta name="description" content="Quick links to all pages in the Aurora Apparel site.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' x='50' text-anchor='middle' font-size='80' font-weight='900' fill='%23000'>A</text></svg>">
+  <!-- Adobe Launch: replace src with your production embed URL -->
+  <script src="https://assets.adobedtm.com/REPLACE_WITH_YOUR_ADOBE_LAUNCH_URL.js"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/adl-utils.js"></script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="logo"><a href="/homepage.html">AURORA</a></div>
+      <nav>
+        <a href="/homepage.html">Home</a>
+        <a href="/plp.html">Collection</a>
+        <a href="/cart.html">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container page-header">
+      <h1 class="page-title">Site Map</h1>
+      <p class="page-subtitle">Quick links to every page</p>
+      <div class="link-grid">
+        <a class="link-card" href="/homepage.html">Homepage</a>
+        <a class="link-card" href="/plp.html">Collection (PLP)</a>
+        <a class="link-card" href="/pdp.html?id=AUR-001">Product Detail (PDP sample)</a>
+        <a class="link-card" href="/cart.html">Shopping Cart</a>
+        <a class="link-card" href="/checkout.html">Checkout</a>
+        <a class="link-card" href="/thankyou.html">Thank You</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Aurora Apparel. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <div id="toast-container"></div>
+  <script src="/js/client.js"></script>
+  <script>
+    // Initialize page
+    window.addEventListener('DOMContentLoaded', () => {
+      // Push page view to Adobe Data Layer
+      window.adobeDataLayer = window.adobeDataLayer || [];
+      window.adobeDataLayer.push({
+        event: 'pageView',
+        page: {
+          name: 'Aurora Apparel:Site Map',
+          type: 'sitemap',
+          url: window.location.href
+        },
+        timestamp: new Date().toISOString()
+      });
+
+      updateCartCount();
+    });
+  </script>
+</body>
+</html>
