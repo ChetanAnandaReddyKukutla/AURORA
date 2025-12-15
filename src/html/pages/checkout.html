@@ -136,7 +136,11 @@
   <script>
     let cartData = null;
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Sync cart from localStorage first
+      if (window.syncCartWithServer) {
+        await window.syncCartWithServer();
+      }
       loadOrderSummary();
       updateCartCount();
 
@@ -147,6 +151,11 @@
       try {
         const response = await fetch('/api/cart');
         cartData = await response.json();
+        
+        // Save cart to localStorage
+        if (cartData.items && cartData.items.length > 0 && window.CartStorage) {
+          window.CartStorage.save(cartData.items);
+        }
         
         if (!cartData.items || cartData.items.length === 0) {
           window.location.href = '/cart.html';
@@ -236,7 +245,11 @@
         
         if (result.success) {
           // Clear cart from localStorage after successful order
-          localStorage.removeItem('auroraApparel_cart');
+          if (window.CartStorage) {
+            window.CartStorage.clear();
+          } else {
+            localStorage.removeItem('auroraApparel_cart');
+          }
           window.location.href = `/thankyou.html?order=${result.orderId}`;
         } else {
           throw new Error(result.message || 'Checkout failed');

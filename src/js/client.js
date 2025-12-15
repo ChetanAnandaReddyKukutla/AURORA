@@ -40,6 +40,36 @@
   // Expose to global scope for other scripts
   window.CartStorage = CartStorage;
 
+  // Sync cart from localStorage to server
+  async function syncCartWithServer() {
+    const savedCart = CartStorage.load();
+    if (savedCart && savedCart.length > 0) {
+      try {
+        const response = await fetch('/api/cart/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          },
+          body: JSON.stringify({ cart: savedCart })
+        });
+        const data = await response.json();
+        if (data.success && data.cart) {
+          // Update localStorage with server response
+          CartStorage.save(data.cart);
+          console.log('Cart synced with server:', data.cart.length, 'items');
+          return data.cart;
+        }
+      } catch (error) {
+        console.warn('Could not sync cart with server:', error);
+      }
+    }
+    return savedCart || [];
+  }
+
+  // Expose to global scope
+  window.syncCartWithServer = syncCartWithServer;
+
   // Ensure adobeDataLayer is initialized
   window.adobeDataLayer = window.adobeDataLayer || [];
 
@@ -68,7 +98,10 @@
   }
 
   // Update cart count in header
-  function updateCartCount() {
+  async function updateCartCount() {
+    // First sync cart from localStorage
+    await syncCartWithServer();
+    
     const timestamp = new Date().getTime();
     fetch(`/api/cart?t=${timestamp}`, {
       cache: 'no-store',
@@ -81,6 +114,10 @@
       .then(res => res.json())
       .then(data => {
         const cartItems = data.items || data.cart || [];
+        // Save to localStorage
+        if (cartItems.length > 0) {
+          window.CartStorage.save(cartItems);
+        }
         const cartCount = cartItems.reduce((sum, item) => sum + (item.quantity || item.qty || 0), 0);
         console.log('Cart count updated:', cartCount);
         const countElements = document.querySelectorAll('#cart-badge, #cart-count');
@@ -265,6 +302,9 @@
     .then(res => res.json())
     .then(data => {
       if (data.success) {
+        // Save cart to localStorage
+        window.CartStorage.save(data.cart);
+        
         // Push scRemove event
         window.adobeDataLayer.push({
           event: "scRemove",
@@ -355,6 +395,9 @@
 
     // Cart link click
     document.addEventListener('click', handleCartLinkClick);
+
+    // Sync cart and update count on page load
+    updateCartCount();
 
     console.log('Client-side event handlers initialized');
   }

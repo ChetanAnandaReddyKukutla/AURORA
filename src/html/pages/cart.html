@@ -66,7 +66,11 @@
   <script src="/js/client.js"></script>
   <script>
     // Initialize on page load
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Sync cart from localStorage first
+      if (window.syncCartWithServer) {
+        await window.syncCartWithServer();
+      }
       loadAndDisplayCart();
     });
 
@@ -77,17 +81,21 @@
           cache: 'no-store',
           headers: { 'Cache-Control': 'no-cache' }
         });
-        return await response.json();
+        const data = await response.json();
+        
+        // Save cart to localStorage
+        if (data.items && data.items.length > 0 && window.CartStorage) {
+          window.CartStorage.save(data.items);
+        }
+        
+        return data;
       } catch (error) {
         console.error('Error fetching cart from server, trying localStorage:', error);
         // If server request fails, try to load from localStorage
-        const savedCart = localStorage.getItem('auroraApparel_cart');
-        if (savedCart) {
-          try {
-            const cartData = JSON.parse(savedCart);
-            return { items: cartData, sessionId: 'local', total: cartData.reduce((sum, item) => sum + (item.price * item.quantity), 0) };
-          } catch (e) {
-            console.error('Could not parse saved cart:', e);
+        if (window.CartStorage) {
+          const savedCart = window.CartStorage.load();
+          if (savedCart && savedCart.length > 0) {
+            return { items: savedCart, sessionId: 'local', total: savedCart.reduce((sum, item) => sum + (item.price * item.quantity), 0) };
           }
         }
         return { items: [], sessionId: 'guest', total: 0 };
@@ -229,7 +237,11 @@
         
         if (data.success) {
           // Save cart to localStorage
-          localStorage.setItem('auroraApparel_cart', JSON.stringify(data.cart));
+          if (window.CartStorage) {
+            window.CartStorage.save(data.cart);
+          } else {
+            localStorage.setItem('auroraApparel_cart', JSON.stringify(data.cart));
+          }
           // Reload cart display
           await loadAndDisplayCart();
         } else {

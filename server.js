@@ -481,7 +481,12 @@ app.get('/api/products', (req, res) => {
 // Get cart
 app.get('/api/cart', (req, res) => {
   const { sessionId, session } = getSession(req);
-  res.cookie('sessionId', sessionId, { httpOnly: true });
+  res.cookie('sessionId', sessionId, { 
+    httpOnly: true, 
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    sameSite: 'lax',
+    path: '/'
+  });
   
   const cartItems = session.cart.map(item => {
     const product = products.find(p => p.productId === item.productId);
@@ -500,10 +505,51 @@ app.get('/api/cart', (req, res) => {
   });
 });
 
+// Sync cart from localStorage
+app.post('/api/cart/sync', (req, res) => {
+  const { sessionId, session } = getSession(req);
+  res.cookie('sessionId', sessionId, { 
+    httpOnly: true, 
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'lax',
+    path: '/'
+  });
+  
+  const { cart } = req.body;
+  
+  // If server cart is empty but client has items, sync from client
+  if (session.cart.length === 0 && cart && cart.length > 0) {
+    session.cart = cart;
+    console.log(`Synced cart from client for session ${sessionId}:`, cart.length, 'items');
+  }
+  
+  const cartItems = session.cart.map(item => {
+    const product = products.find(p => p.productId === item.productId);
+    return {
+      ...item,
+      image: product ? product.image : '/images/placeholder.jpg',
+      name: item.productName
+    };
+  });
+  
+  res.json({
+    success: true,
+    sessionId: sessionId,
+    cart: cartItems,
+    items: cartItems,
+    total: session.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  });
+});
+
 // Add to cart
 app.post('/api/cart/add', (req, res) => {
   const { sessionId, session } = getSession(req);
-  res.cookie('sessionId', sessionId, { httpOnly: true });
+  res.cookie('sessionId', sessionId, { 
+    httpOnly: true, 
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'lax',
+    path: '/'
+  });
   
   const { id, productId, color, size, quantity, qty } = req.body;
   const finalQty = parseInt(quantity || qty) || 1;
@@ -548,7 +594,12 @@ app.post('/api/cart/add', (req, res) => {
 // Update cart quantity
 app.post('/api/cart/update', (req, res) => {
   const { sessionId, session } = getSession(req);
-  res.cookie('sessionId', sessionId, { httpOnly: true });
+  res.cookie('sessionId', sessionId, { 
+    httpOnly: true, 
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'lax',
+    path: '/'
+  });
   
   const { productId, color, size, change } = req.body;
   
@@ -583,7 +634,12 @@ app.post('/api/cart/update', (req, res) => {
 // Remove from cart
 app.post('/api/cart/remove', (req, res) => {
   const { sessionId, session } = getSession(req);
-  res.cookie('sessionId', sessionId, { httpOnly: true });
+  res.cookie('sessionId', sessionId, { 
+    httpOnly: true, 
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'lax',
+    path: '/'
+  });
   
   const { productId, color, size } = req.body;
   
