@@ -207,7 +207,7 @@
           cart: {
             items: cart.items.map(item => ({
               productId: item.productId,
-              name: item.name,
+              name: item.name || item.productName,
               category: item.category,
               price: item.price,
               quantity: item.quantity,
@@ -244,6 +244,28 @@
           } else {
             localStorage.setItem('auroraApparel_cart', JSON.stringify(data.cart));
           }
+
+          // Push scUpdate with full cart snapshot
+          const items = data.cart.map(item => ({
+            productId: item.productId,
+            name: item.productName || item.name,
+            price: item.price,
+            quantity: item.quantity
+          }));
+          const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+          const totalValue = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+          window.adobeDataLayer.push({
+            event: 'scUpdate',
+            cart: {
+              currency: 'USD',
+              totalQuantity,
+              totalValue,
+              items
+            },
+            timestamp: new Date().toISOString()
+          });
+
           // Reload cart display
           await loadAndDisplayCart();
         } else {

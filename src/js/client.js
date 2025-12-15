@@ -98,6 +98,26 @@
     }, 3000);
   }
 
+  // Build normalized cart snapshot for analytics
+  function buildCartSnapshot(cartItems) {
+    const items = (cartItems || []).map(item => ({
+      productId: item.productId,
+      name: item.productName || item.name || '',
+      price: item.price,
+      quantity: item.quantity
+    }));
+
+    const totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const totalValue = items.reduce((sum, item) => sum + (item.price * item.quantity || 0), 0);
+
+    return {
+      currency: 'USD',
+      totalQuantity,
+      totalValue,
+      items
+    };
+  }
+
   // Update cart count in header
   async function updateCartCount() {
     // First sync cart from localStorage
@@ -210,7 +230,7 @@
         // Find the added product in cart
         const addedProduct = data.cart.find(item => item.productId === productId);
         
-        // Push scAdd event
+        // Push scAdd event with full cart snapshot
         window.adobeDataLayer.push({
           event: "scAdd",
           custData: {
@@ -224,28 +244,10 @@
           product: [{
             productId: addedProduct.productId,
             name: addedProduct.productName,
-            brand: addedProduct.brand,
-            category: addedProduct.productCategory,
             price: addedProduct.price,
-            quantity: quantity,
-            color: addedProduct.color,
-            size: addedProduct.size
+            quantity: quantity
           }],
-          cart: {
-            items: data.cart.map(item => ({
-              productId: item.productId,
-              name: item.productName,
-              brand: item.brand,
-              category: item.productCategory,
-              price: item.price,
-              quantity: item.quantity,
-              color: item.color,
-              size: item.size
-            })),
-            totalQuantity: data.cart.reduce((sum, item) => sum + item.quantity, 0),
-            totalValue: data.total,
-            currency: "USD"
-          },
+          cart: buildCartSnapshot(data.cart),
           timestamp: new Date().toISOString()
         });
 
@@ -288,6 +290,14 @@
     const productId = button.getAttribute('data-product-id');
     const row = button.closest('tr');
 
+    // Capture product details before removal for analytics
+    const productName = row ? (row.querySelector('strong')?.textContent || '') : '';
+    const priceText = row ? (row.querySelector('td:nth-child(3)')?.textContent || '$0') : '$0';
+    const price = parseFloat(priceText.replace('$', '')) || 0;
+    const quantityText = row ? (row.querySelector('.qty-value')?.textContent || '1') : '1';
+    const quantity = parseInt(quantityText, 10) || 1;
+    const row = button.closest('tr');
+
     // Add loading state
     button.disabled = true;
     button.classList.add('btn-loading');
@@ -308,7 +318,7 @@
         // Save cart to localStorage
         window.CartStorage.save(data.cart);
         
-        // Push scRemove event
+        // Push scRemove event with full cart snapshot
         window.adobeDataLayer.push({
           event: "scRemove",
           custData: {
@@ -320,23 +330,12 @@
           },
           eventInfo: { eventName: "scRemove" },
           product: [{
-            productId: productId
+            productId: productId,
+            name: productName,
+            price: price,
+            quantity: quantity
           }],
-          cart: {
-            items: data.cart.map(item => ({
-              productId: item.productId,
-              name: item.productName,
-              brand: item.brand,
-              category: item.productCategory,
-              price: item.price,
-              quantity: item.quantity,
-              color: item.color,
-              size: item.size
-            })),
-            totalQuantity: data.cart.reduce((sum, item) => sum + item.quantity, 0),
-            totalValue: data.total,
-            currency: "USD"
-          },
+          cart: buildCartSnapshot(data.cart),
           timestamp: new Date().toISOString()
         });
 
