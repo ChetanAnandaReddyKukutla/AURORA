@@ -691,12 +691,32 @@ app.get('/api/order/:orderId', (req, res) => {
 // Process checkout
 app.post('/api/checkout', (req, res) => {
   const { sessionId, session } = getSession(req);
+  res.cookie('sessionId', sessionId, { 
+    httpOnly: true, 
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'lax',
+    path: '/'
+  });
   
-  if (session.cart.length === 0) {
-    return res.json({ success: false, message: 'Cart is empty' });
+  console.log(`Checkout request - SessionId: ${sessionId}, Cart items: ${session.cart.length}`);
+  
+  if (!session.cart || session.cart.length === 0) {
+    console.log(`Checkout failed - Cart is empty for session ${sessionId}`);
+    return res.status(400).json({ success: false, message: 'Cart is empty' });
   }
   
   const { firstName, lastName, email, address, city, state, zip, country, cardNumber, expiry, cvv } = req.body;
+  
+  // Validate required fields
+  if (!firstName || !lastName || !email || !address || !city || !state || !zip) {
+    console.log('Checkout validation failed - Missing required fields');
+    return res.status(400).json({ success: false, message: 'Missing required shipping information' });
+  }
+  
+  if (!cardNumber || !expiry || !cvv) {
+    console.log('Checkout validation failed - Missing payment information');
+    return res.status(400).json({ success: false, message: 'Missing payment information' });
+  }
   
   // Generate order
   const orderId = generateOrderId();
@@ -724,6 +744,8 @@ app.post('/api/checkout', (req, res) => {
     createdAt: new Date().toISOString(),
     sessionId: sessionId
   };
+  
+  console.log(`Order created: ${orderId}, Revenue: $${orderRevenue.toFixed(2)}, Items: ${session.cart.length}`);
   
   // Store order in session
   session.lastOrder = order;

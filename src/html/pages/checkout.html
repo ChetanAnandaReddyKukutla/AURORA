@@ -255,29 +255,66 @@
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
 
+        console.log('Submitting checkout with data:', Object.keys(data));
+
+        // Create abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
         const response = await fetch('/api/checkout', {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify(data),
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
 
         const result = await response.json();
         
-        if (result.success) {
-          // Clear cart from localStorage after successful order
+        console.log('Checkout response:', result);
+
+        if (result.success && result.orderId) {
+          console.log('Order placed successfully:', result.orderId);
+          
+          // Clear cart from all localStorage keys
           if (window.CartStorage) {
             window.CartStorage.clear();
-          } else {
-            localStorage.removeItem('auroraApparel_cart');
           }
+          localStorage.removeItem('auroraApparel_cart');
+          localStorage.removeItem('auroraApparel_cart_state');
+          
+          // Clear CartPersistence if available
+          if (window.CartPersistence) {
+            try {
+              localStorage.removeItem('auroraApparel_cart_state');
+            } catch (e) {
+              console.warn('Could not clear persistence storage:', e);
+            }
+          }
+          
+          // Redirect to thank you page
           window.location.href = `/thankyou.html?order=${result.orderId}`;
         } else {
-          throw new Error(result.message || 'Checkout failed');
+          throw new Error(result.message || 'Checkout failed - no order ID returned');
         }
       } catch (error) {
         console.error('Checkout error:', error);
-        showToast('Checkout failed. Please try again.', 'error');
+        
+        // Provide more specific error message
+        let errorMessage = 'Checkout failed. Please try again.';
+        if (error.name === 'AbortError') {
+          errorMessage = 'Checkout timed out. Please check your connection and try again.';
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Network error. Please check your connection.';
+        }
+        
+        showToast(errorMessage, 'error');
         button.disabled = false;
         button.innerHTML = 'Place Order';
       }
