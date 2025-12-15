@@ -238,11 +238,16 @@
         const data = await response.json();
         
         if (data.success) {
-          // Save cart to localStorage
+          // Save cart to localStorage (dual persistence)
           if (window.CartStorage) {
             window.CartStorage.save(data.cart);
           } else {
             localStorage.setItem('auroraApparel_cart', JSON.stringify(data.cart));
+          }
+
+          // Also persist to state localStorage
+          if (window.CartPersistence) {
+            window.CartPersistence.saveCart(data.cart);
           }
 
           // Push scUpdate with full cart snapshot

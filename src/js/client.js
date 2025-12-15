@@ -40,7 +40,74 @@
   // Expose to global scope for other scripts
   window.CartStorage = CartStorage;
 
-  // Sync cart from localStorage to server
+  // Cart persistence helper (localStorage as source of truth)
+  const CartPersistence = {
+    // Get cart from localStorage
+    getCart: function() {
+      try {
+        const data = localStorage.getItem('auroraApparel_cart_state');
+        if (data) {
+          return JSON.parse(data);
+        }
+      } catch (e) {
+        console.warn('Could not parse cart state:', e);
+      }
+      return { items: [], totalQuantity: 0, totalValue: 0, currency: 'USD' };
+    },
+
+    // Save cart to localStorage
+    saveCart: function(items) {
+      try {
+        const totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const totalValue = items.reduce((sum, item) => sum + (item.price * item.quantity || 0), 0);
+        const cart = {
+          items,
+          totalQuantity,
+          totalValue,
+          currency: 'USD'
+        };
+        localStorage.setItem('auroraApparel_cart_state', JSON.stringify(cart));
+        console.log('Cart persisted:', cart.totalQuantity, 'items');
+        return cart;
+      } catch (e) {
+        console.warn('Could not save cart state:', e);
+      }
+    },
+
+    // Push cart to Adobe Data Layer
+    pushToDataLayer: function(cart) {
+      window.adobeDataLayer = window.adobeDataLayer || [];
+      window.adobeDataLayer.push({
+        event: 'cartUpdate',
+        cart: {
+          items: (cart.items || []).map(item => ({
+            productId: item.productId,
+            name: item.productName || item.name,
+            price: item.price,
+            quantity: item.quantity
+          })),
+          totalQuantity: cart.totalQuantity || 0,
+          totalValue: cart.totalValue || 0,
+          currency: 'USD'
+        },
+        timestamp: new Date().toISOString()
+      });
+    },
+
+    // Restore and sync cart on page load
+    restore: function() {
+      const cart = this.getCart();
+      if (cart.items && cart.items.length > 0) {
+        console.log('Restoring cart from localStorage:', cart.items.length, 'items');
+        this.pushToDataLayer(cart);
+      }
+    }
+  };
+
+  // Expose to global scope
+  window.CartPersistence = CartPersistence;
+
+  // Sync cart storage
   async function syncCartWithServer() {
     const savedCart = CartStorage.load();
     console.log('Syncing cart - localStorage has:', savedCart ? savedCart.length : 0, 'items');
@@ -226,6 +293,8 @@
       if (data.success) {
         // Save cart to localStorage
         window.CartStorage.save(data.cart);
+        // Persist to localStorage state
+        window.CartPersistence.saveCart(data.cart);
         
         // Find the added product in cart
         const addedProduct = data.cart.find(item => item.productId === productId);
@@ -296,7 +365,6 @@
     const price = parseFloat(priceText.replace('$', '')) || 0;
     const quantityText = row ? (row.querySelector('.qty-value')?.textContent || '1') : '1';
     const quantity = parseInt(quantityText, 10) || 1;
-    const row = button.closest('tr');
 
     // Add loading state
     button.disabled = true;
@@ -317,6 +385,8 @@
       if (data.success) {
         // Save cart to localStorage
         window.CartStorage.save(data.cart);
+        // Persist to localStorage state
+        window.CartPersistence.saveCart(data.cart);
         
         // Push scRemove event with full cart snapshot
         window.adobeDataLayer.push({
@@ -386,6 +456,11 @@
 
   // Initialize event listeners when DOM is ready
   function init() {
+    // Restore cart from localStorage on page load
+    if (window.CartPersistence) {
+      window.CartPersistence.restore();
+    }
+
     // PLP: Product click tracking
     document.addEventListener('click', handleProductClick);
 
