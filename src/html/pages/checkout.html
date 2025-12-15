@@ -140,8 +140,10 @@
       // Sync cart from localStorage first
       if (window.syncCartWithServer) {
         await window.syncCartWithServer();
+        // Wait a moment to ensure sync completes
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-      loadOrderSummary();
+      await loadOrderSummary();
       updateCartCount();
 
       document.getElementById('checkout-form').addEventListener('submit', handleCheckout);
@@ -149,8 +151,10 @@
 
     async function loadOrderSummary() {
       try {
-        const response = await fetch('/api/cart', {
-          credentials: 'include'
+        const response = await fetch('/api/cart?t=' + Date.now(), {
+          cache: 'no-store',
+          credentials: 'include',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
         });
         cartData = await response.json();
         

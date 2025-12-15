@@ -517,18 +517,26 @@ app.post('/api/cart/sync', (req, res) => {
   
   const { cart } = req.body;
   
-  console.log(`Cart sync request - Session: ${sessionId}, Server cart: ${session.cart.length} items, Client cart: ${cart ? cart.length : 0} items`);
+  console.log(`Cart sync - SessionId: ${sessionId}`);
+  console.log(`  Server cart: ${session.cart.length} items`);
+  console.log(`  Client cart: ${cart ? cart.length : 0} items`);
   
-  // Always sync from client if client has items and server is empty OR has different items
+  // Always replace server cart with client cart if client has items
   if (cart && cart.length > 0) {
-    if (session.cart.length === 0) {
-      session.cart = cart;
-      console.log(`Synced cart from client (server was empty): ${cart.length} items`);
-    } else if (session.cart.length !== cart.length) {
-      // If counts differ, trust localStorage (client)
-      session.cart = cart;
-      console.log(`Synced cart from client (counts differ): ${cart.length} items`);
-    }
+    // Store original cart length for comparison
+    const oldLength = session.cart.length;
+    // Always sync from client localStorage
+    session.cart = cart.map(item => ({
+      productId: item.productId,
+      productName: item.productName,
+      productCategory: item.productCategory,
+      brand: item.brand,
+      price: item.price,
+      color: item.color,
+      size: item.size,
+      quantity: item.quantity
+    }));
+    console.log(`  Synced from client: ${oldLength} -> ${session.cart.length} items`);
   }
   
   const cartItems = session.cart.map(item => {
