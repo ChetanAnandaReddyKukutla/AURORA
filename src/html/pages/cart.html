@@ -79,6 +79,7 @@
       try {
         const response = await fetch('/api/cart?t=' + Date.now(), {
           cache: 'no-store',
+          credentials: 'include',
           headers: { 'Cache-Control': 'no-cache' }
         });
         const data = await response.json();
@@ -229,6 +230,7 @@
       try {
         const response = await fetch('/api/cart/update', {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ productId, color, size, change })
         });

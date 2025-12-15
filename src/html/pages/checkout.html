@@ -149,7 +149,9 @@
 
     async function loadOrderSummary() {
       try {
-        const response = await fetch('/api/cart');
+        const response = await fetch('/api/cart', {
+          credentials: 'include'
+        });
         cartData = await response.json();
         
         // Save cart to localStorage
@@ -237,6 +239,7 @@
 
         const response = await fetch('/api/checkout', {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });

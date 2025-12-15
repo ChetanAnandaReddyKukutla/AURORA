@@ -47,6 +47,7 @@
       try {
         const response = await fetch('/api/cart/sync', {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
             'Cache-Control': 'no-cache'
@@ -105,6 +106,7 @@
     const timestamp = new Date().getTime();
     fetch(`/api/cart?t=${timestamp}`, {
       cache: 'no-store',
+      credentials: 'include',
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
@@ -114,10 +116,9 @@
       .then(res => res.json())
       .then(data => {
         const cartItems = data.items || data.cart || [];
-        // Save to localStorage
-        if (cartItems.length > 0) {
-          window.CartStorage.save(cartItems);
-        }
+        console.log('Cart fetched from server:', cartItems.length, 'items');
+        // Always save to localStorage to keep in sync
+        window.CartStorage.save(cartItems);
         const cartCount = cartItems.reduce((sum, item) => sum + (item.quantity || item.qty || 0), 0);
         console.log('Cart count updated:', cartCount);
         const countElements = document.querySelectorAll('#cart-badge, #cart-count');
@@ -191,6 +192,7 @@
 
     fetch('/api/cart/add', {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json'
       },
@@ -292,6 +294,7 @@
 
     fetch('/api/cart/remove', {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json'
       },
