@@ -43,27 +43,27 @@
   // Sync cart from localStorage to server
   async function syncCartWithServer() {
     const savedCart = CartStorage.load();
-    if (savedCart && savedCart.length > 0) {
-      try {
-        const response = await fetch('/api/cart/sync', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-          },
-          body: JSON.stringify({ cart: savedCart })
-        });
-        const data = await response.json();
-        if (data.success && data.cart) {
-          // Update localStorage with server response
-          CartStorage.save(data.cart);
-          console.log('Cart synced with server:', data.cart.length, 'items');
-          return data.cart;
-        }
-      } catch (error) {
-        console.warn('Could not sync cart with server:', error);
+    console.log('Syncing cart - localStorage has:', savedCart ? savedCart.length : 0, 'items');
+    
+    try {
+      const response = await fetch('/api/cart/sync', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        body: JSON.stringify({ cart: savedCart || [] })
+      });
+      const data = await response.json();
+      if (data.success && data.cart) {
+        // Update localStorage with server response
+        CartStorage.save(data.cart);
+        console.log('Cart synced with server:', data.cart.length, 'items');
+        return data.cart;
       }
+    } catch (error) {
+      console.warn('Could not sync cart with server:', error);
     }
     return savedCart || [];
   }

@@ -137,12 +137,20 @@
     let cartData = null;
 
     window.addEventListener('DOMContentLoaded', async () => {
-      // Sync cart from localStorage first
-      if (window.syncCartWithServer) {
-        await window.syncCartWithServer();
-        // Wait a moment to ensure sync completes
-        await new Promise(resolve => setTimeout(resolve, 100));
+      // Sync cart from localStorage first with timeout
+      try {
+        if (window.syncCartWithServer) {
+          const syncPromise = window.syncCartWithServer();
+          // Add 2 second timeout for sync
+          await Promise.race([
+            syncPromise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Sync timeout')), 2000))
+          ]);
+        }
+      } catch (error) {
+        console.warn('Sync failed, continuing with server fetch:', error);
       }
+      
       await loadOrderSummary();
       updateCartCount();
 
@@ -156,7 +164,13 @@
           credentials: 'include',
           headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
         });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch cart: ' + response.status);
+        }
+        
         cartData = await response.json();
+        console.log('Loaded cart:', cartData.items ? cartData.items.length : 0, 'items');
         
         // Save cart to localStorage
         if (cartData.items && cartData.items.length > 0 && window.CartStorage) {
