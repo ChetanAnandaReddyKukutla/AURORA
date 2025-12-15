@@ -89,19 +89,30 @@
     });
 
     async function loadOrderDetails(orderId) {
+      console.log('loadOrderDetails called for:', orderId);
+      
       // Check if purchase event already fired for this order (dedup via sessionStorage)
       const purchaseKey = `purchase_${orderId}`;
-      if (sessionStorage.getItem(purchaseKey)) {
-        console.log('Purchase event already fired for this order, skipping dedup');
-        displayOrderDetails(orderId);
-        return;
-      }
-
+      const alreadyFired = sessionStorage.getItem(purchaseKey);
+      console.log('Purchase event already fired?', alreadyFired);
+      
       try {
-        const response = await fetch(`/api/order/${orderId}`);
-        const order = await response.json();
+        console.log('Fetching order from API...');
+        const response = await fetch(`/api/order/${orderId}?t=${Date.now()}`, {
+          cache: 'no-store',
+          credentials: 'include',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         
-        if (!order || !order.items) {
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+        
+        const order = await response.json();
+        console.log('Fetched order:', order);
+        
+        if (!order || !order.items || order.items.length === 0) {
+          console.log('Order has no items');
           document.getElementById('order-details').innerHTML = `
             <p class="order-number">Order #${orderId}</p>
             <p>We've sent a confirmation email with your order details.</p>
@@ -109,57 +120,62 @@
           return;
         }
 
-        const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        // Only fire purchase event if not already fired
+        if (!alreadyFired) {
+          console.log('Firing purchase event for:', orderId);
+          const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          
+          // Mark purchase event as fired
+          sessionStorage.setItem(purchaseKey, 'true');
 
-        // Mark purchase event as fired
-        sessionStorage.setItem(purchaseKey, 'true');
+          // Push purchase event to Adobe Data Layer
+          window.adobeDataLayer.push({
+            event: "purchase",
+            custData: {
+              custId: "",
+              emailID_plain: order.email || "",
+              mobileNo_plain: "",
+              loginStatus: "guest",
+              loginMethod: ""
+            },
+            order: {
+              orderId: orderId,
+              currency: "USD",
+              revenue: subtotal,
+              tax: 0,
+              shipping: 0,
+              discount: 0
+            },
+            cart: {
+              items: order.items.map(item => ({
+                productId: item.productId,
+                name: item.name,
+                category: item.category || "Apparel",
+                price: item.price,
+                quantity: item.quantity,
+                color: item.color,
+                size: item.size
+              })),
+              totalQuantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+              totalValue: subtotal,
+              currency: "USD"
+            },
+            shipping: {
+              firstName: order.firstName,
+              lastName: order.lastName,
+              email: order.email,
+              address: order.address,
+              city: order.city,
+              state: order.state,
+              zip: order.zip,
+              country: order.country || "US"
+            },
+            timestamp: new Date().toISOString()
+          });
+        }
 
-        // Push purchase event to Adobe Data Layer
-        window.adobeDataLayer.push({
-          event: "purchase",
-          custData: {
-            custId: "",
-            emailID_plain: order.email || "",
-            mobileNo_plain: "",
-            loginStatus: "guest",
-            loginMethod: ""
-          },
-          order: {
-            orderId: orderId,
-            currency: "USD",
-            revenue: subtotal,
-            tax: 0,
-            shipping: 0,
-            discount: 0
-          },
-          cart: {
-            items: order.items.map(item => ({
-              productId: item.productId,
-              name: item.name,
-              category: item.category || "Apparel",
-              price: item.price,
-              quantity: item.quantity,
-              color: item.color,
-              size: item.size
-            })),
-            totalQuantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-            totalValue: subtotal,
-            currency: "USD"
-          },
-          shipping: {
-            firstName: order.firstName,
-            lastName: order.lastName,
-            email: order.email,
-            address: order.address,
-            city: order.city,
-            state: order.state,
-            zip: order.zip,
-            country: order.country || "US"
-          },
-          timestamp: new Date().toISOString()
-        });
-
-        displayOrderDetails(orderId);
+        // Always display order details (now with proper data)
+        displayOrderDetails(order, orderId);
       } catch (error) {
         console.error('Error loading order details:', error);
         document.getElementById('order-details').innerHTML = `
@@ -169,50 +185,50 @@
       }
     }
 
-    function displayOrderDetails(orderId) {
-      fetch(`/api/order/${orderId}`)
-        .then(res => res.json())
-        .then(order => {
-          const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-          const customerName = order.firstName && order.lastName 
-            ? `${order.firstName} ${order.lastName}` 
-            : 'Valued Customer';
-          document.getElementById('thankyou-greeting').textContent = `Thank you, ${customerName}! Your order has been successfully placed.`;
+    function displayOrderDetails(order, orderId) {
+      console.log('displayOrderDetails called for:', orderId);
+      
+      if (!order || !order.items) {
+        console.error('Invalid order data');
+        document.getElementById('order-details').innerHTML = `
+          <p class="order-number">Order #${orderId}</p>
+          <p>We've sent a confirmation email with your order details.</p>
+        `;
+        return;
+      }
+      
+      const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const customerName = order.firstName && order.lastName 
+        ? `${order.firstName} ${order.lastName}` 
+        : 'Valued Customer';
+      document.getElementById('thankyou-greeting').textContent = `Thank you, ${customerName}! Your order has been successfully placed.`;
 
-          document.getElementById('order-details').innerHTML = `
-            <p class="order-number">Order #${orderId}</p>
-            <p>We've sent a confirmation email to <strong>${order.email}</strong></p>
-            
-            <div class="shipping-info">
-              <h3>Shipping To:</h3>
-              <p>${order.firstName} ${order.lastName}<br>
-              ${order.address}<br>
-              ${order.city}, ${order.state} ${order.zip}<br>
-              ${order.country}</p>
+      document.getElementById('order-details').innerHTML = `
+        <p class="order-number">Order #${orderId}</p>
+        <p>We've sent a confirmation email to <strong>${order.email}</strong></p>
+        
+        <div class="shipping-info">
+          <h3>Shipping To:</h3>
+          <p>${order.firstName} ${order.lastName}<br>
+          ${order.address}<br>
+          ${order.city}, ${order.state} ${order.zip}<br>
+          ${order.country}</p>
+        </div>
+        
+        <div class="order-items">
+          <h2>Order Items</h2>
+          ${order.items.map(item => `
+            <div class="order-item">
+              <span>${item.name} (${item.quantity}x)</span>
+              <span>$${(item.price * item.quantity).toFixed(2)}</span>
             </div>
-            
-            <div class="order-items">
-              <h2>Order Items</h2>
-              ${order.items.map(item => `
-                <div class="order-item">
-                  <span>${item.name} (${item.quantity}x)</span>
-                  <span>$${(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              `).join('')}
-              <div class="order-total">
-                <strong>Total:</strong>
-                <strong>$${subtotal.toFixed(2)}</strong>
-              </div>
-            </div>
-          `;
-        })
-        .catch(error => {
-          console.error('Error displaying order details:', error);
-          document.getElementById('order-details').innerHTML = `
-            <p class="order-number">Order #${orderId}</p>
-            <p>We've sent a confirmation email with your order details.</p>
-          `;
-        });
+          `).join('')}
+          <div class="order-total">
+            <strong>Total:</strong>
+            <strong>$${subtotal.toFixed(2)}</strong>
+          </div>
+        </div>
+      `;
     }
   </script>
 </body>

@@ -454,6 +454,9 @@ const products = [
 // Session data (in-memory)
 const sessions = {};
 
+// In-memory order storage (persists across sessions for order retrieval)
+const orders = {};
+
 // Helper to get or create session
 function getSession(req) {
   let sessionId = req.cookies.sessionId;
@@ -679,13 +682,25 @@ app.post('/api/cart/remove', (req, res) => {
 
 // Get order details
 app.get('/api/order/:orderId', (req, res) => {
+  const orderId = req.params.orderId;
   const { sessionId, session } = getSession(req);
   
-  if (!session.lastOrder || session.lastOrder.id !== req.params.orderId) {
-    return res.status(404).json({ error: 'Order not found' });
+  console.log(`Fetching order ${orderId}`);
+  
+  // First check if order exists in global orders map (persists across sessions)
+  if (orders[orderId]) {
+    console.log(`Found order ${orderId} in global orders map`);
+    return res.json(orders[orderId]);
   }
   
-  res.json(session.lastOrder);
+  // Fallback to session-based order (current session only)
+  if (session.lastOrder && session.lastOrder.id === orderId) {
+    console.log(`Found order ${orderId} in session`);
+    return res.json(session.lastOrder);
+  }
+  
+  console.log(`Order ${orderId} not found`);
+  return res.status(404).json({ error: 'Order not found' });
 });
 
 // Process checkout
@@ -746,6 +761,10 @@ app.post('/api/checkout', (req, res) => {
   };
   
   console.log(`Order created: ${orderId}, Revenue: $${orderRevenue.toFixed(2)}, Items: ${session.cart.length}`);
+  
+  // Store order in global orders map (persists across sessions)
+  orders[orderId] = order;
+  console.log(`Stored order ${orderId} in global orders map. Total orders: ${Object.keys(orders).length}`);
   
   // Store order in session
   session.lastOrder = order;
